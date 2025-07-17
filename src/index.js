@@ -3,10 +3,12 @@ import { connectDB } from "./config/db.js";
 import app from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
+import createSocketService from "./socket/index.js";
 
 
 const server = http.createServer(app);
-
+const io = createSocketService(server);
+app.set('io', io);
 const startServer = async () => {
   try {
     await connectDB();
