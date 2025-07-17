@@ -6,6 +6,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import { httpLogger, logger } from "./utils/logger.js";
 import questionRoutes from "./routes/question.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import issueRoutes from "./routes/issue.routes.js";
 import { env } from "./config/env.js";
 import cookieParser from 'cookie-parser';
 
@@ -56,6 +57,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/issues", issueRoutes);
 app.get('/',(req,res)=>res.status(200).json({message:"Server is running"}))
 
 export default app;
