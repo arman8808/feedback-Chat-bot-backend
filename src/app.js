@@ -5,7 +5,9 @@ import mongoSanitize from "express-mongo-sanitize";
 
 import { httpLogger, logger } from "./utils/logger.js";
 import questionRoutes from "./routes/question.routes.js";
+import userRoutes from "./routes/user.routes.js";
 import { env } from "./config/env.js";
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -36,7 +38,7 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use(mongoSanitize());
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-
+app.use(cookieParser());
 app.use(httpLogger);
 app.use((req, res, next) => {
   logger.info(`Incoming request: ${req.method} ${req.path}`);
@@ -52,6 +54,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.use("/api/users", userRoutes);
 app.use("/api/questions", questionRoutes);
+app.get('/',(req,res)=>res.status(200).json({message:"Server is running"}))
 
 export default app;
