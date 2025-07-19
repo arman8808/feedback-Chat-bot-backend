@@ -16,15 +16,14 @@ export const register = async (req, res) => {
     const user = await registerUser(req.body);
     const token = generateToken(user._id);
 
-   
-     res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: true, 
-      sameSite: 'none',
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: '.vercel.app',
+      domain: "feedback-chat-bot-backend.vercel.app",
+      path: "/",
     });
-
     res.status(201).json({
       message: "User registered",
       user: {
@@ -44,13 +43,13 @@ export const login = async (req, res) => {
     const user = await loginUser(req.body);
     const token = generateToken(user._id);
 
-   
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: true, 
-      sameSite: 'none',
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: '.vercel.app',
+      domain: "feedback-chat-bot-backend.vercel.app",
+      path: "/",
     });
     res.status(200).json({
       message: "Login successful",
