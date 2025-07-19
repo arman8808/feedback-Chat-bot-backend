@@ -16,12 +16,13 @@ export const register = async (req, res) => {
     const user = await registerUser(req.body);
     const token = generateToken(user._id);
 
-    // Set cookie with token
-    res.cookie('token', token, {
+   
+     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use secure in production
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: true, 
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: '.vercel.app',
     });
 
     res.status(201).json({
@@ -43,14 +44,14 @@ export const login = async (req, res) => {
     const user = await loginUser(req.body);
     const token = generateToken(user._id);
 
-    // Set cookie with token
+   
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use secure in production
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: true, 
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: '.vercel.app',
     });
-
     res.status(200).json({
       message: "Login successful",
       user: {
