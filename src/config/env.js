@@ -5,7 +5,7 @@ const parseAllowedOrigins = () => {
   const origins = process.env.ALLOWED_ORIGINS;
   return origins
     ? origins.split(",").map((o) => o.trim())
-    : ["http://localhost:5173"];
+    : ["http://localhost:5173",'https://feedback-chat-bot-frontend.vercel.app'];
 };
 
 export const env = {

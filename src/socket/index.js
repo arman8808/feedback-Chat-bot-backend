@@ -6,7 +6,7 @@ import { socketAuthMiddleware, } from '../middleware/socketAuth.js';
 export default function createSocketService(server) {
   const io = new Server(server, {
     cors: {
-      origin: 'http://localhost:5173',
+      origin: 'https://feedback-chat-bot-frontend.vercel.app',
       methods: ["GET", "POST"],
       credentials: true
     },
