@@ -1,76 +1,102 @@
-import { Server } from 'socket.io';
-import connectionManager from './connectionManager.js';
-import chatHandler from './chatHandler.js';
-import { socketAuthMiddleware, } from '../middleware/socketAuth.js';
+import { Server } from "socket.io";
+import connectionManager from "./connectionManager.js";
+import chatHandler from "./chatHandler.js";
+import { socketAuthMiddleware } from "../middleware/socketAuth.js";
 
 export default function createSocketService(server) {
   const io = new Server(server, {
     cors: {
-      origin: 'https://feedback-chat-bot-frontend.vercel.app',
+      origin: "https://feedback-chat-bot-frontend.vercel.app",
       methods: ["GET", "POST"],
-      credentials: true
+      credentials: true,
     },
-    connectionStateRecovery: {
-      maxDisconnectionDuration: 2 * 60 * 1000,
-      skipMiddlewares: true,
-    },
-    pingTimeout: 60000, // 60 seconds
-    pingInterval: 25000, // 25 seconds
+
+    transports: ["polling"],
+    connectionStateRecovery: false,
+    pingTimeout: 30000,
+    pingInterval: 10000,
+    allowEIO3: true,
+    serveClient: false,
   });
 
-  // Authentication middleware
   io.use(socketAuthMiddleware);
 
-  // Connection management
   io.use((socket, next) => {
     connectionManager(io, socket, next);
   });
 
-  // Main connection handler
-  io.on('connection', (socket) => {
+  io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id}`);
-    
-    // Initialize connection status
-    socket.emit('connection-status', {
-      status: 'connected',
-      timestamp: new Date().toISOString()
+
+    socket.emit("connection-status", {
+      status: "connected",
+      timestamp: new Date().toISOString(),
+      transport: socket.conn.transport.name,
     });
-    
-    // Attach chat handlers
+
+    socket.conn.on("upgrade", (transport) => {
+      console.log(`Transport upgraded to: ${transport.name}`);
+    });
+
+    socket.conn.on("error", (err) => {
+      console.error(`Transport error: ${err.message}`);
+    });
+
     chatHandler(io, socket);
-    
-    // Heartbeat monitoring
-    let heartbeatInterval = setInterval(() => {
+
+    const heartbeatInterval = setInterval(() => {
       if (socket.connected) {
-        socket.emit('heartbeat', { timestamp: Date.now() });
+        try {
+          socket.emit("heartbeat-ping", { timestamp: Date.now() });
+
+          const heartbeatTimeout = setTimeout(() => {
+            if (socket.connected) {
+              socket.disconnect(true);
+            }
+          }, 5000);
+
+          socket.once("heartbeat-pong", () => {
+            clearTimeout(heartbeatTimeout);
+          });
+        } catch (err) {
+          console.error("Heartbeat error:", err);
+        }
       }
-    }, 15000);
-    
-    // Handle disconnections
-    socket.on('disconnect', (reason) => {
+    }, 10000);
+
+    socket.on("disconnect", (reason) => {
       console.log(`Socket disconnected (${reason}): ${socket.id}`);
       clearInterval(heartbeatInterval);
-      socket.emit('connection-status', {
-        status: 'disconnected',
-        reason,
-        timestamp: new Date().toISOString()
-      });
+
+      if (socket.connected) {
+        socket.emit("connection-status", {
+          status: "disconnected",
+          reason,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (reason !== "client namespace disconnect") {
+        setTimeout(() => {
+          if (!socket.connected) {
+            socket.connect();
+          }
+        }, 2000 + Math.random() * 3000);
+      }
     });
-    
-    // Handle errors
-    socket.on('error', (error) => {
+
+    socket.on("error", (error) => {
       console.error(`Socket error: ${error.message}`);
-      socket.emit('connection-status', {
-        status: 'error',
-        code: 'SOCKET_ERROR',
-        message: 'Connection error'
+      socket.emit("connection-status", {
+        status: "error",
+        code: "SOCKET_ERROR",
+        message: error.message || "Connection error",
       });
     });
   });
 
-  // Global error handling
-  io.on('error', (error) => {
-    console.error('Socket.IO server error:', error);
+  io.on("error", (error) => {
+    console.error("Socket.IO server error:", error);
   });
 
   return io;
