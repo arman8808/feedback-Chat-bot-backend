@@ -11,21 +11,15 @@ const generateToken = (userId) => {
     expiresIn: process.env.JWT_EXPIRES_IN || "1d",
   });
 };
+
 export const register = async (req, res) => {
   try {
     const user = await registerUser(req.body);
     const token = generateToken(user._id);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: "feedback-chat-bot-backend.vercel.app",
-      path: "/",
-    });
     res.status(201).json({
       message: "User registered",
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -34,6 +28,7 @@ export const register = async (req, res) => {
     });
   } catch (err) {
     console.log(err);
+
     res.status(400).json({ message: err.message });
   }
 };
@@ -43,16 +38,10 @@ export const login = async (req, res) => {
     const user = await loginUser(req.body);
     const token = generateToken(user._id);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: "feedback-chat-bot-backend.vercel.app",
-      path: "/",
-    });
+   
     res.status(200).json({
       message: "Login successful",
+      token,
       user: {
         id: user._id,
         name: user.name,
