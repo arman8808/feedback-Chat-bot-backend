@@ -1,12 +1,12 @@
 import { Server } from 'socket.io';
-import authMiddleware from '../middleware/authMiddleware.js';
 import connectionManager from './connectionManager.js';
 import chatHandler from './chatHandler.js';
+import { socketAuthMiddleware, } from '../middleware/socketAuth.js';
 
 export default function createSocketService(server) {
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL,
+      origin: 'http://localhost:5173',
       methods: ["GET", "POST"],
       credentials: true
     },
@@ -19,7 +19,7 @@ export default function createSocketService(server) {
   });
 
   // Authentication middleware
-  io.use(authMiddleware);
+  io.use(socketAuthMiddleware);
 
   // Connection management
   io.use((socket, next) => {

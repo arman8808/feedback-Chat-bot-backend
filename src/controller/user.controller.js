@@ -3,13 +3,26 @@ import {
   loginUser,
   getUserById,
 } from "../services/user.service.js";
-import generateToken from "../utils/generateToken.js";
-
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+  });
+};
 export const register = async (req, res) => {
   try {
     const user = await registerUser(req.body);
+    const token = generateToken(user._id);
 
-    generateToken(res, user._id); 
+    // Set cookie with token
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure in production
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.status(201).json({
       message: "User registered",
@@ -20,6 +33,7 @@ export const register = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -27,8 +41,15 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const user = await loginUser(req.body);
+    const token = generateToken(user._id);
 
-    generateToken(res, user._id); 
+    // Set cookie with token
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure in production
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.status(200).json({
       message: "Login successful",
@@ -54,7 +75,7 @@ export const logout = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await getUserById(req.userId); 
+    const user = await getUserById(req.userId);
     res.status(200).json(user);
   } catch (err) {
     res.status(404).json({ message: err.message });

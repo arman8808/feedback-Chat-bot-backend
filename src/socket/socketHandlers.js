@@ -1,34 +1,58 @@
 
+import User from "../models/user.model.js";
 import {
   startSessionForUser,
   submitResponse,
-} from "../services/chatService.js";
-import { reportIssue } from "../services/issueService.js";
+} from "../services/chat.service.js";
+import { reportIssue } from "../services/issue.service.js";
+import { logger } from "../utils/logger.js";
 
-export const registerSocketHandlers = (io, socket) => {
+export const registerSocketHandlers = async (io, socket) => {
   const userId = socket.userId;
 
-  // Notify client it’s connected
-  socket.emit("status", "Connected");
+  try {
+    await User.findByIdAndUpdate(userId, { socketId: socket.id });
+  } catch (err) {
+    logger.error(`Error updating user socket ID: ${err.message}`);
+  }
+
+  // Notify client it's connected
+  socket.emit("status", { status: "connected", userId });
 
   // Prevent multiple sessions per user
-  io.fetchSockets().then((sockets) => {
-    const duplicate = sockets.find(
-      (s) => s.userId === userId && s.id !== socket.id
-    );
-    if (duplicate) {
-      socket.emit("status", "Duplicate session detected");
-      return socket.disconnect(true);
-    }
-  });
+  const sockets = await io.fetchSockets();
+  const duplicate = sockets.find(
+    (s) => s.userId === userId && s.id !== socket.id
+  );
 
+  if (duplicate) {
+    socket.emit("status", {
+      status: "duplicate",
+      message: "Another session is active",
+    });
+    return socket.disconnect(true);
+  }
   // Start chat session
   socket.on("start-session", async () => {
     try {
-      const firstQ = await startSessionForUser(userId, socket.id);
-      socket.emit("first-question", firstQ);
+      console.log(`Starting session for user ${userId}`);
+
+      logger.info(`Starting session for user ${userId}`);
+
+      const firstQuestion = await startSessionForUser(userId, socket.id);
+
+      if (!firstQuestion) {
+        throw new Error("No questions available");
+      }
+
+      socket.emit("first-question", firstQuestion);
+      logger.info(`Session started for user ${userId}`);
     } catch (err) {
-      socket.emit("status", `Error: ${err.message}`);
+      logger.error(`Session start error for user ${userId}: ${err.message}`);
+      socket.emit("error", {
+        message: "Failed to start session",
+        details: err.message,
+      });
     }
   });
 
