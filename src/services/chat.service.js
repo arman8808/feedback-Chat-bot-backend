@@ -66,15 +66,7 @@ export const startSessionForUser = async (userId, socketId) => {
   }
 };
 
-/**
- * Submits a user response and returns the next question
- * @param {Object} params - Response parameters
- * @param {string} params.userId - The user ID
- * @param {string} params.questionId - The question ID being answered
- * @param {number|null} params.rating - The rating provided (1-5)
- * @param {string|null} params.feedback - Additional feedback text
- * @returns {Promise<Object|null>} The next question or null if complete
- */
+
 export const submitResponse = async ({
   userId,
   questionId,
@@ -161,7 +153,7 @@ const endSession = async (sessionId) => {
 
 const getFirstQuestion = async () => {
   try {
-    // Get questions in order and return the first one
+  
     const questions = await Question.find().sort('order');
     if (questions.length === 0) {
       throw new Error('No questions configured');
