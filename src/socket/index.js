@@ -4,16 +4,13 @@ import chatHandler from "./chatHandler.js";
 import { socketAuthMiddleware } from "../middleware/socketAuth.js";
 
 export default function createSocketService(server) {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",")
-    : [];
-
   const io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: 'https://feedback-chat-bot-frontend.vercel.app',
       methods: ["GET", "POST"],
       credentials: true,
     },
+
     transports: ["polling"],
     connectionStateRecovery: false,
     pingTimeout: 30000,

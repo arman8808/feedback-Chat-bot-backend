@@ -21,34 +21,17 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'", env.ALLOWED_ORIGINS],
+        // connectSrc: ["'self'", env.ALLOWED_ORIGINS],
       },
     },
     crossOriginEmbedderPolicy: false,
   })
 );
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
-  process.env.ALLOWED_ORIGINS.split(',') : 
-  [];
-
-
-const corsOptions = {
-  origin: function (origin, callback) {
-
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+app.use(cors({
+  origin: '*', 
   credentials: true
-};
-
-app.use(cors(corsOptions));
-
+}));
 
 app.use(express.json({ limit: "10kb" }));
 app.use(mongoSanitize());
