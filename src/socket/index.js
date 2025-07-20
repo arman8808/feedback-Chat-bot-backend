@@ -2,22 +2,26 @@ import { Server } from "socket.io";
 import connectionManager from "./connectionManager.js";
 import chatHandler from "./chatHandler.js";
 import { socketAuthMiddleware } from "../middleware/socketAuth.js";
+import { env } from "../config/env.js";
 
 export default function createSocketService(server) {
   const io = new Server(server, {
     cors: {
-      origin: 'https://feedback-chat-bot-frontend.vercel.app',
+      origin: env.Frontend_Url || 'http://localhost:5173',
       methods: ["GET", "POST"],
       credentials: true,
     },
-
-    transports: ["polling"],
-    connectionStateRecovery: false,
+    transports: ["polling", "websocket"],
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000,
+      skipMiddlewares: true,
+    },
     pingTimeout: 30000,
     pingInterval: 10000,
     allowEIO3: true,
     serveClient: false,
   });
+
 
   io.use(socketAuthMiddleware);
 
@@ -25,8 +29,10 @@ export default function createSocketService(server) {
     connectionManager(io, socket, next);
   });
 
+
   io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    console.log(`Socket connected: ${socket.id} (User: ${socket.user?._id})`);
+
 
     socket.emit("connection-status", {
       status: "connected",
@@ -34,9 +40,11 @@ export default function createSocketService(server) {
       transport: socket.conn.transport.name,
     });
 
+
     socket.conn.on("upgrade", (transport) => {
       console.log(`Transport upgraded to: ${transport.name}`);
     });
+
 
     socket.conn.on("error", (err) => {
       console.error(`Transport error: ${err.message}`);
@@ -51,6 +59,7 @@ export default function createSocketService(server) {
 
           const heartbeatTimeout = setTimeout(() => {
             if (socket.connected) {
+              console.log(`Heartbeat timeout for socket ${socket.id}`);
               socket.disconnect(true);
             }
           }, 5000);
@@ -74,14 +83,6 @@ export default function createSocketService(server) {
           reason,
           timestamp: new Date().toISOString(),
         });
-      }
-
-      if (reason !== "client namespace disconnect") {
-        setTimeout(() => {
-          if (!socket.connected) {
-            socket.connect();
-          }
-        }, 2000 + Math.random() * 3000);
       }
     });
 
