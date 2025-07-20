@@ -28,10 +28,27 @@ app.use(
   })
 );
 
-app.use(cors({
-  origin: 'https://feedback-chat-bot-frontend.vercel.app', 
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
+  process.env.ALLOWED_ORIGINS.split(',') : 
+  [];
+
+
+const corsOptions = {
+  origin: function (origin, callback) {
+
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
 
 app.use(express.json({ limit: "10kb" }));
 app.use(mongoSanitize());
