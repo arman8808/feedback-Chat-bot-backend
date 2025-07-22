@@ -2,12 +2,12 @@ const activeConnections = new Map();
 
 export default (io, socket, next) => {
   try {
-    // Wait for authentication to complete
+ 
     if (!socket.userId) {
       return next(new Error("UNAUTHENTICATED"));
     }
 
-    // Allow only one connection per user
+   
     const existingSocketId = activeConnections.get(socket.userId);
     if (existingSocketId && existingSocketId !== socket.id) {
       const existingSocket = io.sockets.sockets.get(existingSocketId);

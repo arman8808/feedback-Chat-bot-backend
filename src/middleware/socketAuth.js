@@ -18,7 +18,7 @@ export async function socketAuthMiddleware(socket, next) {
     if (!user) throw new Error("USER_NOT_FOUND");
 
     socket.userId = user._id;
-    socket.user = { _id: user._id }; // For logging purposes
+    socket.user = { _id: user._id }; 
     console.log(`Authenticated socket for user ${user._id}`);
     next();
   } catch (err) {

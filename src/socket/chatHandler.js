@@ -82,7 +82,7 @@ export default function chatHandler(io, socket) {
 
   const endSession = async () => {
     try {
-      // Ensure all responses have sessionId
+   
       const responsesToSave = session.responses.map((response) => ({
         ...response,
         sessionId: session.id,
@@ -92,7 +92,6 @@ export default function chatHandler(io, socket) {
         await Feedback.insertMany(responsesToSave);
       }
 
-      // Prepare the user report
       const report = {
         sessionId: session.id,
         totalQuestions: session.questions.length,
@@ -116,7 +115,6 @@ export default function chatHandler(io, socket) {
     }
   };
 
-  // Socket event handlers
   socket.on("start-session", async () => {
     try {
       if (session.isActive) {
@@ -155,7 +153,7 @@ socket.on("submit-response", async ({ questionId, rating, feedback }) => {
       throw new Error("INVALID_QUESTION");
     }
 
-    // Save response
+
     const response = {
       question: questionId,
       rating,
@@ -167,16 +165,16 @@ socket.on("submit-response", async ({ questionId, rating, feedback }) => {
     session.responses.push(response);
 
     if (rating <= 2) {
-      // Request additional feedback
+   
       socket.emit("request-feedback", {
         questionId,
       });
-      return; // Don't move to next question yet
+      return; 
     } else if (rating >= 4) {
       socket.emit("appreciation");
     }
 
-    // Move to next question
+  
     nextQuestion();
   } catch (error) {
     console.error("Response error:", error);
@@ -188,7 +186,7 @@ socket.on("submit-response", async ({ questionId, rating, feedback }) => {
 });
 socket.on("submit-additional-feedback", async ({ questionId, additionalFeedback }) => {
   try {
-    // Find the response in the session and update it
+
     const response = session.responses.find(r => 
       r.question.toString() === questionId
     );
@@ -197,7 +195,7 @@ socket.on("submit-additional-feedback", async ({ questionId, additionalFeedback 
       response.feedback = additionalFeedback;
     }
 
-    // Now move to next question
+   
     nextQuestion();
   } catch (error) {
     console.error("Additional feedback error:", error);
@@ -214,9 +212,9 @@ socket.on("submit-additional-feedback", async ({ questionId, additionalFeedback 
         throw new Error("SESSION_NOT_ACTIVE");
       }
 
-      // Save the experience rating
+      
       await Feedback.create({
-        question: null, // Not linked to any specific question
+        question: null, 
         rating,
         feedback: feedback || null,
         user: socket.userId,
@@ -225,13 +223,12 @@ socket.on("submit-additional-feedback", async ({ questionId, additionalFeedback 
         isExperienceRating: true,
       });
 
-      // Send thank you message
+     
       socket.emit("thank-you", {
         message: "Thank you for your feedback! Your session is now complete.",
         sessionId: session.id,
       });
 
-      // Give time for the message to be delivered before cleanup
       setTimeout(() => {
         cleanupSession(true);
         socket.emit("session-ended", {
