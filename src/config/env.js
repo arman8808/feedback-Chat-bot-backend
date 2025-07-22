@@ -5,13 +5,16 @@ const parseAllowedOrigins = () => {
   const origins = process.env.ALLOWED_ORIGINS;
   return origins
     ? origins.split(",").map((o) => o.trim())
-    : ["http://localhost:5173",'https://feedback-chat-bot-frontend.vercel.app'];
+    : [
+        "http://localhost:5173",
+        "https://feedback-chat-bot-frontend.vercel.app",
+      ];
 };
 
 export const env = {
   PORT: parseInt(process.env.PORT || "5000", 10),
   NODE_ENV: process.env.NODE_ENV || "development",
-  Frontend_Url: process.env.Frontend_Url || "development",
+  Frontend_Url: process.env.Frontend_Url || "http://localhost:5173",
   MONGODB_URI:
     process.env.MONGODB_URI || "mongodb://localhost:27017/feedback-chatbot",
   ALLOWED_ORIGINS: parseAllowedOrigins(),

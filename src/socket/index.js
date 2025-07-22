@@ -7,7 +7,7 @@ import { env } from "../config/env.js";
 export default function createSocketService(server) {
   const io = new Server(server, {
     cors: {
-      origin: env.Frontend_Url || 'http://localhost:5173',
+      origin: env.Frontend_Url || "http://localhost:5173",
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -16,12 +16,11 @@ export default function createSocketService(server) {
       maxDisconnectionDuration: 2 * 60 * 1000,
       skipMiddlewares: true,
     },
-    pingTimeout: 30000,
-    pingInterval: 10000,
+    pingTimeout: 60000,
+    pingInterval: 25000,
     allowEIO3: true,
     serveClient: false,
   });
-
 
   io.use(socketAuthMiddleware);
 
@@ -29,10 +28,8 @@ export default function createSocketService(server) {
     connectionManager(io, socket, next);
   });
 
-
   io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id} (User: ${socket.user?._id})`);
-
 
     socket.emit("connection-status", {
       status: "connected",
@@ -40,11 +37,9 @@ export default function createSocketService(server) {
       transport: socket.conn.transport.name,
     });
 
-
     socket.conn.on("upgrade", (transport) => {
       console.log(`Transport upgraded to: ${transport.name}`);
     });
-
 
     socket.conn.on("error", (err) => {
       console.error(`Transport error: ${err.message}`);
@@ -75,8 +70,6 @@ export default function createSocketService(server) {
 
     socket.on("disconnect", (reason) => {
       console.log(`Socket disconnected (${reason}): ${socket.id}`);
-      clearInterval(heartbeatInterval);
-
       if (socket.connected) {
         socket.emit("connection-status", {
           status: "disconnected",

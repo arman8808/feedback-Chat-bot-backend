@@ -1,40 +1,41 @@
-
 const activeConnections = new Map();
 
 export default (io, socket, next) => {
   try {
-    const userId = socket.userId;
-    if (!userId) {
-      throw new Error("No userId on socket");
+    // Wait for authentication to complete
+    if (!socket.userId) {
+      return next(new Error("UNAUTHENTICATED"));
     }
-    if (activeConnections.has(userId)) {
-      const existingSocketId = activeConnections.get(userId);
+
+    // Allow only one connection per user
+    const existingSocketId = activeConnections.get(socket.userId);
+    if (existingSocketId && existingSocketId !== socket.id) {
       const existingSocket = io.sockets.sockets.get(existingSocketId);
       if (existingSocket) {
         existingSocket.emit('force-disconnect', {
-          code: 'SESSION_LIMIT',
-          message: 'You can only have one active session',
+          code: 'DUPLICATE_CONNECTION',
+          message: 'New connection replacing this one'
         });
-        existingSocket.disconnect(true);
+        existingSocket.disconnect();
       }
     }
-   
-    activeConnections.set(userId, socket.id);
- 
+
+    activeConnections.set(socket.userId, socket.id);
+    console.log(`New connection for user ${socket.userId}`);
+
     const cleanup = () => {
-      if (activeConnections.get(userId) === socket.id) {
-        activeConnections.delete(userId);
-        console.log(`Cleaned up connection for user ${userId}`);
+      if (activeConnections.get(socket.userId) === socket.id) {
+        activeConnections.delete(socket.userId);
+        console.log(`Connection cleaned for user ${socket.userId}`);
       }
     };
+
     socket.on('disconnect', cleanup);
     socket.on('error', cleanup);
     
     next();
   } catch (err) {
     console.error('Connection manager error:', err);
-    const error = new Error('CONNECTION_LIMIT');
-    error.details = 'Maximum concurrent sessions reached';
-    next(error);
+    next(err);
   }
 };
